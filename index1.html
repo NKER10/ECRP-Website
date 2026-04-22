@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERCP | Empire City RP</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+
+<style>
+body{margin:0;font-family:sans-serif;background:#0f172a;color:white}
+.section{padding:40px;text-align:center}
+button{padding:10px;margin:5px;cursor:pointer}
+input,textarea{padding:10px;margin:5px;width:250px}
+.card{border:1px solid #38bdf8;padding:10px;margin:10px}
+</style>
+</head>
+<body>
+
+<div class="section">
+<h1>ERCP Admin Panel</h1>
+</div>
+
+<div class="section">
+<h2>Login / Register</h2>
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+<br>
+<button onclick="register()">Register</button>
+<button onclick="login()">Login</button>
+<p id="userStatus"></p>
+</div>
+
+<div class="section">
+<h2>Submit Application</h2>
+<input id="appUser" placeholder="Discord Username">
+<textarea id="appReason" placeholder="Reason"></textarea>
+<br>
+<button onclick="submitApp()">Submit</button>
+</div>
+
+<div class="section">
+<h2>Application Dashboard (Staff)</h2>
+<div id="apps"></div>
+</div>
+
+<script>
+// FIREBASE CONFIG (REPLACE THIS)
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// AUTH
+function register(){
+ auth.createUserWithEmailAndPassword(email.value,password.value)
+ .then(()=>userStatus.innerText="Registered!")
+}
+
+function login(){
+ auth.signInWithEmailAndPassword(email.value,password.value)
+ .then(()=>userStatus.innerText="Logged in!")
+}
+
+// APPLICATION SYSTEM
+function submitApp(){
+ db.collection("applications").add({
+  user: appUser.value,
+  reason: appReason.value,
+  status: "pending"
+ });
+ alert("Application sent");
+ loadApps();
+}
+
+// LOAD DASHBOARD
+function loadApps(){
+ apps.innerHTML="";
+ db.collection("applications").get().then(snapshot=>{
+  snapshot.forEach(doc=>{
+   const data=doc.data();
+   const div=document.createElement("div");
+   div.className="card";
+   div.innerHTML=`
+    <p><b>${data.user}</b></p>
+    <p>${data.reason}</p>
+    <p>Status: ${data.status}</p>
+    <button onclick="updateStatus('${doc.id}','accepted')">Accept</button>
+    <button onclick="updateStatus('${doc.id}','denied')">Deny</button>
+   `;
+   apps.appendChild(div);
+  });
+ });
+}
+
+function updateStatus(id,status){
+ db.collection("applications").doc(id).update({status:status});
+ loadApps();
+
+ // UPDATE STATUS ONLY (Discord sync removed)
+}
+
+// AUTO LOAD
+loadApps();
+</script>
+
+</body>
+</html>
